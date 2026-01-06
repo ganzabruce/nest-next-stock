@@ -1,26 +1,62 @@
-import { Injectable } from '@nestjs/common';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateAuthDto } from './dto/update-auth.dto';
+import { Injectable, UnauthorizedException , BadRequestException } from '@nestjs/common';
+import {LoginAuthDto} from './dto/login-auth-dto';
+import {RegisterAuthDto} from './dto/register.auth.dto';
+import { Auth } from './entities/auth.entity';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class AuthService {
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
-  }
+  constructor(
+    @InjectRepository(Auth)
+    private authRepository: Repository<Auth>,
+    private jwtService: JwtService,
+  ) {}
 
-  findAll() {
-    return `This action returns all auth`;
-  }
+  
 
-  findOne(id: number) {
-    return `This action returns a #${id} auth`;
+  async login(loginAuthDto: LoginAuthDto) {
+    const { email, password } = loginAuthDto;
+    const user = await this.authRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException("User Doesn't exist! please create account first");
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException("Invalid credentials");
+    }
+    return {
+      access_token: this.jwtService.sign({ userId: user.id }),
+      user: {
+        id: user.id,
+        email: user.email,
+        fullNames: user.fullNames,
+        phone: user.phone,
+        role: user.role,
+      },
+    };
   }
-
-  update(id: number, updateAuthDto: UpdateAuthDto) {
-    return `This action updates a #${id} auth`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} auth`;
+  async register(registerAuthDto: RegisterAuthDto) {
+    const {fullNames,email, phone, password} = registerAuthDto;
+    const user = await this.authRepository.findOne({ where: { email } });
+    if(user){
+      throw new BadRequestException("User Already exists! please login");
+    }
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = this.authRepository.create({fullNames, email, phone, password: hashedPassword});
+    await this.authRepository.save(newUser);
+    return {
+      access_token: this.jwtService.sign({ userId: newUser.id }),
+      user: {
+        id: newUser.id,
+        email: newUser.email,
+        fullNames: newUser.fullNames,
+        phone: newUser.phone,
+        role: newUser.role,
+      },
+      message: "User registered successfully",
+    };
   }
 }
