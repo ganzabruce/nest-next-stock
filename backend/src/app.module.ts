@@ -6,6 +6,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Auth } from './auth/entities/auth.entity';
 import { ConfigModule } from '@nestjs/config';
 import { ConfigService } from '@nestjs/config';
+import { UsersModule } from './users/users.module';
+import { ProductsModule } from './products/products.module';
+import { ReportsModule } from './reports/reports.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +28,9 @@ import { ConfigService } from '@nestjs/config';
       inject: [ConfigService],
     }),
     AuthModule,
+    UsersModule,
+    ProductsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
