@@ -9,6 +9,8 @@ import { ConfigService } from '@nestjs/config';
 import { UsersModule } from './users/users.module';
 import { ProductsModule } from './products/products.module';
 import { ReportsModule } from './reports/reports.module';
+import { StockinModule } from './stockin/stockin.module';
+import { StockoutModule } from './stockout/stockout.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -31,6 +33,8 @@ import { ReportsModule } from './reports/reports.module';
     UsersModule,
     ProductsModule,
     ReportsModule,
+    StockinModule,
+    StockoutModule,
   ],
   controllers: [AppController],
   providers: [AppService],

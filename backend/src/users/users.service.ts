@@ -1,23 +1,64 @@
-import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Repository } from 'typeorm';
+import { Product } from 'src/products/entities/product.entity';
+import { ConflictException } from '@nestjs/common';
 
 @Injectable()
 export class UsersService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+
+  constructor(
+    @InjectRepository(Product)
+    private userRepository: Repository<Product>
+  ){}
+
+
+  async create(createUserDto: CreateUserDto) {
+    const {fullNames, email , password, phone } = createUserDto
+    const user = await this.userRepository.findOne({ email})
+    if(user){
+      throw new ConflictException("the user with that email already exists")
+    }
+    const newUser  = await this.userRepository.create({fullNames, email , password, phone })
+    await this.userRepository.save(newUser);
+    return{
+      status: "success",
+      message:"user is created successfully"
+    }
+
   }
 
-  findAll() {
-    return `This action returns all users`;
+  async findAll() {
+    const users = await this.userRepository.find()
+    return {
+      status: "success",
+      data:users
+    }
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: number) {
+    const user = await this.userRepository.findOne(id)
+    if(!user){
+      return{
+        status:"success",
+        message: "there's no such user in the system"
+      }
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const {fullNames, email , password, phone, role } = updateUserDto
+    const user = await this.userRepository.findOne(id)
+    if(!user){
+      return{
+        status:"success",
+        message: "there's no such user in the system"
+      }
+    }
+
+
+
   }
 
   remove(id: number) {
